@@ -27,4 +27,12 @@ export class MyConfigService {
   getDefaultAwsRegion(): string {
     return this.configService.get<string>('aws_region_default');
   }
+
+  getSqsQueueName(): string {
+    return this.configService.get<string>('aws_sqs_queue_name');
+  }
+
+  getSqsQueueURL(): string {
+    return this.configService.get<string>('aws_sqs_queue_url');
+  }
 }

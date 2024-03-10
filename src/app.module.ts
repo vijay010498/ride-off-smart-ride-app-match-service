@@ -7,6 +7,8 @@ import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { MyConfigModule } from './my-config/my-config.module';
 import { MyConfigService } from './my-config/my-config.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SqsModule } from './sqs/sqs.module';
+import { SqsProcessorModule } from './sqs_processor/sqs_processor.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { MongooseModule } from '@nestjs/mongoose';
       }),
       inject: [MyConfigService],
     }),
+    SqsModule,
+    SqsProcessorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
