@@ -9,6 +9,24 @@ interface Location {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
+export interface Stop {
+  address: string;
+  longitude: number;
+  latitude: number;
+  coordinates: Location;
+  url: string;
+  name: string;
+  postalCode?: string;
+  countryShortName: string;
+  countryLongName: string;
+  provinceShortName: string;
+  provinceLongName: string;
+  placeId: string;
+  arrivalTime: Date;
+  distanceFromPrevStopInMeters: number;
+  durationFromPrevStopInSeconds: number;
+}
+
 export enum DriverRideStatus {
   created = 'RIDE_CREATED',
   cancelled = 'RIDE_CANCELLED',
@@ -50,19 +68,17 @@ export class DriverRide {
   @Prop({
     type: [Object],
   })
-  stops: [object];
+  stops: Stop[];
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   originAddress: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   destinationAddress: string;
 
@@ -83,14 +99,12 @@ export class DriverRide {
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   originUrl: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   destinationUrl: string;
 
@@ -110,71 +124,61 @@ export class DriverRide {
 
   @Prop({
     type: String,
-    required: true,
-    index: true,
+    required: false,
   })
   originPostalCode: string;
 
   @Prop({
     type: String,
-    required: true,
-    index: true,
+    required: false,
   })
   destinationPostalCode: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   originCountryShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   destinationCountryShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   originCountryLongName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   destinationCountryLongName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   originProvinceShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   destinationProvinceShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   originProvinceLongName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   destinationProvinceLongName: string;
   // should include date and time
@@ -185,6 +189,31 @@ export class DriverRide {
   })
   leaving: Date;
 
+  @Prop({
+    required: true,
+    type: Date,
+    index: true,
+  })
+  arrivalTime: Date;
+
+  @Prop({
+    required: true,
+    type: Number,
+  })
+  totalRideDurationInSeconds: number;
+
+  @Prop({
+    required: true,
+    type: Number,
+  })
+  totalRideDistanceInMeters: number;
+
+  @Prop({
+    required: true,
+    type: Number,
+  })
+  totalRideAverageFuelCost: number;
+
   // TODO add recurring trip
 
   @Prop({
@@ -194,10 +223,10 @@ export class DriverRide {
   })
   status: string;
 
+  // TODO also append vehicle details as document
   // vehicle details
   @Prop({
     required: true,
-    index: true,
     ref: 'UserVehicle',
     type: mongoose.Types.ObjectId,
   })
@@ -220,6 +249,13 @@ export class DriverRide {
   emptySeats: number;
 
   @Prop({
+    type: Number,
+    required: true,
+    index: true,
+  })
+  availableSeats: number;
+
+  @Prop({
     type: String,
     required: false,
   })
@@ -233,6 +269,7 @@ const DriverRideScheme = SchemaFactory.createForClass(DriverRide);
 DriverRideScheme.index({
   origin: '2dsphere',
   destination: '2dsphere',
+  'stops.coordinates': '2dsphere',
 });
 
 export { DriverRideScheme };

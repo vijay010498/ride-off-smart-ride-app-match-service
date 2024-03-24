@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
 export enum VehicleTypeEnum {
   hatchBack = 'Hatchback',
@@ -54,6 +55,12 @@ export class UserVehicle {
     type: String,
   })
   licensePlate: string;
+
+  @Prop({
+    required: true,
+    type: Number,
+  })
+  averageKmPerLitre: number;
 
   @Prop({
     required: true,

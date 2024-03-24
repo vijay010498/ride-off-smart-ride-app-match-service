@@ -6,6 +6,7 @@ import { UserTokenBlacklistSchema } from '../common/schemas/user-token-blacklist
 import { UserVehicleSchema } from '../common/schemas/user-vehicle.schema';
 import { DriverRideScheme } from '../common/schemas/driver-ride.schema';
 import { RiderRideScheme } from '../common/schemas/rider-ride.schema';
+import { MatchModule } from '../match/match.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { RiderRideScheme } from '../common/schemas/rider-ride.schema';
         schema: RiderRideScheme,
       },
     ]),
+    MatchModule,
   ],
   providers: [SqsProcessorService],
   exports: [SqsProcessorService],

@@ -8,6 +8,7 @@ import { Message } from '@aws-sdk/client-sqs';
 import { UserVehicleDocument } from '../common/schemas/user-vehicle.schema';
 import { DriverRideDocument } from '../common/schemas/driver-ride.schema';
 import { RiderRideDocument } from '../common/schemas/rider-ride.schema';
+import { MatchService } from '../match/match.service';
 
 @Injectable()
 export class SqsProcessorService {
@@ -23,6 +24,7 @@ export class SqsProcessorService {
     private readonly driverRideCollection: Model<DriverRideDocument>,
     @InjectModel('RiderRide')
     private readonly riderRideCollection: Model<RiderRideDocument>,
+    private readonly matchService: MatchService,
   ) {}
 
   async ProcessSqsMessage(messages: Message[]) {
@@ -74,7 +76,7 @@ export class SqsProcessorService {
       driverRide,
       riderRide,
       cancelledDriverRide,
-      cancelledRiderRide
+      cancelledRiderRide,
     );
     switch (EVENT_TYPE) {
       case Events.userCreatedByPhone:
@@ -114,7 +116,11 @@ export class SqsProcessorService {
       const ride = new this.riderRideCollection({
         ...riderRide,
       });
-      return ride.save();
+      await ride.save();
+
+      // Start Ride Matching Logic
+      this.matchService.matchRiderRide(ride);
+      return ride;
     } catch (error) {
       this.logger.error('_handleRiderRideCreated-error', error);
       throw error;

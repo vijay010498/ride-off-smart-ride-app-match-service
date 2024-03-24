@@ -44,126 +44,108 @@ export class RiderRide {
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromAddress: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toAddress: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromPlaceId: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toPlaceId: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromUrl: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toUrl: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toName: string;
 
   @Prop({
     type: String,
-    required: true,
-    index: true,
+    required: false,
   })
   fromPostalCode: string;
 
   @Prop({
     type: String,
-    required: true,
-    index: true,
+    required: false,
   })
   toPostalCode: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromCountryShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toCountryShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromCountryLongName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toCountryLongName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromProvinceShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toProvinceShortName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   fromProvinceLongName: string;
 
   @Prop({
     type: String,
     required: true,
-    index: true,
   })
   toProvinceLongName: string;
 
@@ -174,6 +156,18 @@ export class RiderRide {
     index: true,
   })
   departing: Date;
+
+  @Prop({
+    required: true,
+    type: Number,
+  })
+  totalRideDurationInSeconds: number;
+
+  @Prop({
+    required: true,
+    type: Number,
+  })
+  totalRideDistanceInMeters: number;
 
   @Prop({
     type: String,

@@ -9,6 +9,7 @@ import { MyConfigService } from './my-config/my-config.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SqsModule } from './sqs/sqs.module';
 import { SqsProcessorModule } from './sqs_processor/sqs_processor.module';
+import { MatchModule } from './match/match.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SqsProcessorModule } from './sqs_processor/sqs_processor.module';
     }),
     SqsModule,
     SqsProcessorModule,
+    MatchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
