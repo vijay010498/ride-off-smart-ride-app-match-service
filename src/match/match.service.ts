@@ -90,40 +90,40 @@ export class MatchService {
                   },
                 ],
               },
-              // {
-              //   $or: [
-              //     {
-              //       'destination.coordinates': {
-              //         $geoWithin: {
-              //           $centerSphere: [
-              //             [
-              //               riderRide.to.coordinates[0],
-              //               riderRide.to.coordinates[1],
-              //             ],
-              //             10 / 6371, // 10 km radius in radians
-              //           ],
-              //         },
-              //       },
-              //     },
-              //     {
-              //       'stops.coordinates': {
-              //         $elemMatch: {
-              //           coordinates: {
-              //             $geoWithin: {
-              //               $centerSphere: [
-              //                 [
-              //                   riderRide.to.coordinates[0],
-              //                   riderRide.to.coordinates[1],
-              //                 ],
-              //                 10 / 6371, // 10 km radius in radians
-              //               ],
-              //             },
-              //           },
-              //         },
-              //       },
-              //     },
-              //   ],
-              // },
+              {
+                $or: [
+                  {
+                    'destination.coordinates': {
+                      $geoWithin: {
+                        $centerSphere: [
+                          [
+                            riderRide.to.coordinates[0],
+                            riderRide.to.coordinates[1],
+                          ],
+                          10 / 6371, // 10 km radius in radians
+                        ],
+                      },
+                    },
+                  },
+                  {
+                    'stops.coordinates': {
+                      $elemMatch: {
+                        coordinates: {
+                          $geoWithin: {
+                            $centerSphere: [
+                              [
+                                riderRide.to.coordinates[0],
+                                riderRide.to.coordinates[1],
+                              ],
+                              10 / 6371, // 10 km radius in radians
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
             ],
           },
         },

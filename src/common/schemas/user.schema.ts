@@ -37,7 +37,7 @@ export class User {
   faceIdVerified: boolean;
 
   @Prop()
-  faceVerificationId: mongoose.Types.ObjectId;
+  faceVerificationId: mongoose.Types.ObjectId; // I'd given by verification service
 
   @Prop()
   refreshToken: string;
@@ -53,6 +53,11 @@ export class User {
     coordinates: { type: [Number], default: [0, 0] }, // [longitude, latitude]
   })
   lastLocation: Location;
+
+  @Prop({
+    default: false,
+  })
+  online: boolean;
 }
 
 export type UserDocument = User & Document;
