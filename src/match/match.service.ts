@@ -178,6 +178,7 @@ export class MatchService {
     const driverRideRequestsPromises = matchedDriversRides.map(
       (matchedDriverRide) => {
         return new this.driverRideRequestsCollection({
+          driverRideId: matchedDriverRide._id,
           driverId: matchedDriverRide.userId,
           riderRideId: riderRide._id,
           canAccept: false, // first time driver should give price then wait for rider response

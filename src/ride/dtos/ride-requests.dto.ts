@@ -1,6 +1,7 @@
 import { DriverRideRequestDto } from './driver-ride-request.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
+import { RiderRideRequestDto } from './rider-ride-request.dto';
 
 export class RideRequestsDto {
   @ApiProperty({
@@ -13,7 +14,7 @@ export class RideRequestsDto {
   requestsAsDriver: DriverRideRequestDto[];
 
   @ApiProperty()
-  @Type(() => DriverRideRequestDto)
+  @Type(() => RiderRideRequestDto)
   @Expose()
-  requestsAsRider: DriverRideRequestDto; // TODO change type
+  requestsAsRider: RiderRideRequestDto[]; // TODO change type
 }

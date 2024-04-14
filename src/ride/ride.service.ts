@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DriverService } from '../driver/driver.service';
-import { RiderService } from '../rider/rider.service';
+import { NewRiderRequest, RiderService } from '../rider/rider.service';
 import { UserDocument } from '../common/schemas/user.schema';
 import { RideRequestsFilterDto } from './dtos/ride-requests.filter.dto';
 import mongoose from 'mongoose';
@@ -26,7 +26,7 @@ export class RideService {
     }
 
     if (!filters.requestType || filters.requestType === 'rider') {
-      requestsAsRider = await this.driverService.getDriverRequests(user);
+      requestsAsRider = await this.riderService.getRiderRequests(user);
     }
 
     return {
@@ -47,8 +47,19 @@ export class RideService {
       driverStartingPrice,
     );
 
-    // TODO should create new Rider Request
+    const riderRide = await this.riderService.getRideById(
+      updatedDriverRideRequest.riderRideId,
+    );
 
+    const newRiderRideRequest: NewRiderRequest = {
+      riderId: riderRide.userId,
+      riderRideId: updatedDriverRideRequest.riderRideId,
+      driverRideId: updatedDriverRideRequest.driverRideId,
+      driverRideRequestId: updatedDriverRideRequest.id,
+      priceByDriver: updatedDriverRideRequest.driverStartingPrice,
+    };
+
+    await this.riderService.newRiderRequest(newRiderRideRequest);
     return updatedDriverRideRequest;
   }
 

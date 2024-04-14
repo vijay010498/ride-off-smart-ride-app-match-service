@@ -35,6 +35,22 @@ export class DriverRideRequests {
   riderRideId: mongoose.Types.ObjectId;
 
   @Prop({
+    required: true,
+    index: true,
+    ref: 'DriverRide',
+    type: mongoose.Types.ObjectId,
+  })
+  driverRideId: mongoose.Types.ObjectId;
+
+  @Prop({
+    required: false,
+    index: true,
+    ref: 'RiderRideRequests',
+    type: mongoose.Types.ObjectId,
+  })
+  riderRideRequestId: mongoose.Types.ObjectId; // will be coming only when driver gives price and rider ride request is created
+
+  @Prop({
     type: String,
     enum: DriverRideRequestsStatusEnums,
     default: DriverRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
@@ -65,7 +81,7 @@ export class DriverRideRequests {
     required: false,
     type: Number,
   })
-  acceptedPrice: number;
+  acceptedPrice: number; // either  driverStartingPrice / riderRequestingPrice
 
   @Prop({
     required: false,

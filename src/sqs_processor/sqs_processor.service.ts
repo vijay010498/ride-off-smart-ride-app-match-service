@@ -1,5 +1,4 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { Document, Model, Types } from 'mongoose';
 import { UserDocument } from '../common/schemas/user.schema';
 import { UserTokenBlacklistDocument } from '../common/schemas/user-token-blacklist.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -7,11 +6,9 @@ import { Events } from '../common/enums/events.enums';
 import { Message } from '@aws-sdk/client-sqs';
 import { UserVehicleDocument } from '../common/schemas/user-vehicle.schema';
 import { DriverRideDocument } from '../common/schemas/driver-ride.schema';
-import {
-  RiderRide,
-  RiderRideDocument,
-} from '../common/schemas/rider-ride.schema';
+import { RiderRideDocument } from '../common/schemas/rider-ride.schema';
 import { MatchService } from '../match/match.service';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class SqsProcessorService {

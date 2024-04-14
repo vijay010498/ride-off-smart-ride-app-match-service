@@ -44,7 +44,7 @@ export class DriverService {
       .find({
         driverId: user.id,
       })
-      .populate('riderRideId')
+      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId'])
       .sort({
         createdAt: 'descending',
       })
@@ -70,7 +70,7 @@ export class DriverService {
           new: true,
         },
       )
-      .populate('riderRideId');
+      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
   }
 
   async declineRequest(requestId: mongoose.Types.ObjectId | string) {
@@ -89,7 +89,7 @@ export class DriverService {
           new: true,
         },
       )
-      .populate('riderRideId');
+      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
   }
 
   async acceptRequest(
@@ -111,6 +111,6 @@ export class DriverService {
           new: true,
         },
       )
-      .populate('riderRideId');
+      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
   }
 }

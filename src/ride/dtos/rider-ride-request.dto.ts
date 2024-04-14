@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { DriverRideRequestsStatusEnums } from '../../common/schemas/driver-ride-requests.schema';
-import { RiderRideDto } from './rider-ride.dto';
 import { DriverRideDto } from './driver-ride.dto';
+import { RiderRideRequestsStatusEnums } from '../../common/schemas/rider-ride-requests.schema';
+import { RiderRideDto } from './rider-ride.dto';
 
-export class DriverRideRequestDto {
+export class RiderRideRequestDto {
   @ApiProperty()
   @Transform(({ obj }) => obj._id)
   @Expose()
@@ -12,12 +12,7 @@ export class DriverRideRequestDto {
 
   @ApiProperty()
   @Expose()
-  driverId: string;
-
-  @ApiProperty()
-  @Type(() => RiderRideDto)
-  @Expose()
-  riderRideId: RiderRideDto;
+  riderId: string;
 
   @ApiProperty()
   @Type(() => DriverRideDto)
@@ -25,15 +20,20 @@ export class DriverRideRequestDto {
   driverRideId: DriverRideDto;
 
   @ApiProperty()
+  @Type(() => RiderRideDto)
   @Expose()
-  riderRideRequestId: string; // we should only send ID not any other details
+  riderRideId: RiderRideDto;
+
+  @ApiProperty()
+  @Expose()
+  driverRideRequestId: string;
 
   @ApiProperty({
     type: String,
-    enum: DriverRideRequestsStatusEnums,
+    enum: RiderRideRequestsStatusEnums,
   })
   @Expose()
-  status: DriverRideRequestsStatusEnums;
+  status: RiderRideRequestsStatusEnums;
 
   @ApiProperty()
   @Expose()
@@ -49,17 +49,17 @@ export class DriverRideRequestDto {
 
   @ApiProperty()
   @Expose()
+  canNegotiate: boolean;
+
+  @ApiProperty()
+  @Expose()
   acceptedPrice?: number;
 
   @ApiProperty()
   @Expose()
-  riderRequestingPrice?: number; // only when rider negotiates
+  priceByDriver: number;
 
   @ApiProperty()
   @Expose()
-  driverStartingPrice?: number;
-
-  @ApiProperty()
-  @Expose()
-  shouldGivePrice: boolean;
+  negotiatedPrice: number;
 }
