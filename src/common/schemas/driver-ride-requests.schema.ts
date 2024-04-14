@@ -6,7 +6,6 @@ export enum DriverRideRequestsStatusEnums {
   WAITING_FOR_RIDER_RESPONSE = 'DRIVER_RIDE_REQUEST_WAITING_FOR_RIDER_RESPONSE',
   ACCEPTED_BY_RIDER = 'DRIVER_RIDE_REQUEST_ACCEPTED_BY_RIDER', // when driver gives price and rider accepts it
   ACCEPTED_BY_DRIVER = 'DRIVER_RIDE_REQUEST_ACCEPTED_BY_DRIVER', // when rider negotiates for one time then driver accepts
-  NEGOTIATED_BY_RIDER = 'DRIVER_RIDE_REQUEST_NEGOTIATED_BY_RIDER', // when the rider negotiates the only time -  we create new Driver Ride
   DECLINED_BY_RIDER = 'DRIVER_RIDE_REQUEST_DECLINED_BY_RIDER', // when the driver gives price then rider declines (without any negotiation)
   DECLINED_BY_DRIVER = 'DRIVER_RIDE_REQUEST_DECLINED_BY_DRIVER', // when the rider negotiates the price then driver declines it // or driver cancels in the first time itself
   OTHER_DRIVER_ACCEPTED = 'DRIVER_RIDE_REQUEST_OTHER_DRIVER_ACCEPTED',

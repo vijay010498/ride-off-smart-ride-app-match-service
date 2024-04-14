@@ -10,6 +10,7 @@ import {
   DriverRideRequestsDocument,
   DriverRideRequestsStatusEnums,
 } from '../common/schemas/driver-ride-requests.schema';
+import { RideRequestsFilterDto } from '../ride/dtos/ride-requests.filter.dto';
 
 @Injectable()
 export class DriverService {
@@ -47,66 +48,67 @@ export class DriverService {
       _id: requestId,
     });
   }
-  async getDriverRequests(user: UserDocument) {
-    return this.driverRideRequestsCollection
-      .find({
-        driverId: user.id,
-      })
-      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId'])
-      .sort({
-        createdAt: 'descending',
-      })
-      .exec();
+  async getDriverRequests(
+    driver: UserDocument,
+    filters: RideRequestsFilterDto,
+  ) {
+    let query = this.driverRideRequestsCollection
+      .find({ driverId: driver.id })
+      .populate(['riderRideId', 'driverRideId'])
+      .sort({ createdAt: 'descending' });
+
+    if (filters.requestStatus) {
+      query = query.where('status').equals(filters.requestStatus);
+    }
+
+    return query.exec();
   }
 
   async driverGivesPrice(
     requestId: mongoose.Types.ObjectId | string,
     startingPrice: number,
   ) {
-    return this.driverRideRequestsCollection
-      .findByIdAndUpdate(
-        requestId,
-        {
-          $set: {
-            driverStartingPrice: startingPrice,
-            status: DriverRideRequestsStatusEnums.WAITING_FOR_RIDER_RESPONSE,
-            shouldGivePrice: false,
-            canDecline: false, // Driver cannot decline once price is given
-          },
+    return this.driverRideRequestsCollection.findByIdAndUpdate(
+      requestId,
+      {
+        $set: {
+          driverStartingPrice: startingPrice,
+          status: DriverRideRequestsStatusEnums.WAITING_FOR_RIDER_RESPONSE,
+          shouldGivePrice: false,
+          canDecline: false, // Driver cannot decline once price is given
         },
-        {
-          new: true,
-        },
-      )
-      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
+      },
+      {
+        new: true,
+      },
+    );
   }
 
   async declineRequest(requestId: mongoose.Types.ObjectId | string) {
-    return this.driverRideRequestsCollection
-      .findByIdAndUpdate(
-        requestId,
-        {
-          $set: {
-            status: DriverRideRequestsStatusEnums.DECLINED_BY_DRIVER,
-            canDecline: false,
-            canAccept: false,
-            shouldGivePrice: false,
-          },
+    return this.driverRideRequestsCollection.findByIdAndUpdate(
+      requestId,
+      {
+        $set: {
+          status: DriverRideRequestsStatusEnums.DECLINED_BY_DRIVER,
+          canDecline: false,
+          canAccept: false,
+          shouldGivePrice: false,
         },
-        {
-          new: true,
-        },
-      )
-      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
+      },
+      {
+        new: true,
+      },
+    );
   }
 
   async acceptRequest(
     requestId: mongoose.Types.ObjectId | string,
     acceptedPrice: number,
     status: DriverRideRequestsStatusEnums = DriverRideRequestsStatusEnums.ACCEPTED_BY_DRIVER,
+    riderRideRequestId: mongoose.Types.ObjectId | string,
   ) {
-    return this.driverRideRequestsCollection
-      .findByIdAndUpdate(
+    const updatedRequest =
+      await this.driverRideRequestsCollection.findByIdAndUpdate(
         requestId,
         {
           $set: {
@@ -114,40 +116,22 @@ export class DriverService {
             canDecline: false,
             canAccept: false,
             acceptedPrice,
+            riderRideRequestId,
           },
         },
         {
           new: true,
         },
-      )
-      .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
-  }
+      );
 
-  async riderAcceptedRide(
-    driverRideRequestId: mongoose.Types.ObjectId | string,
-  ) {
-    // update driver request also driver ride
-    const driverRideRequest = await this.getRequestById(driverRideRequestId);
-
-    const acceptedPrice =
-      driverRideRequest.riderRequestingPrice ||
-      driverRideRequest.driverStartingPrice;
-
-    const acceptedDriverRequest = await this.acceptRequest(
-      driverRideRequestId,
-      acceptedPrice,
-      DriverRideRequestsStatusEnums.ACCEPTED_BY_RIDER,
-    );
-
-    // Invalid all the other driver requests
+    // Invalid any other pending requests
     await this.invalidAllDriverRequestForRiderRideId(
-      acceptedDriverRequest.id,
-      driverRideRequest.riderRideId,
+      updatedRequest.id,
+      updatedRequest.riderRideId,
     );
-
     // Update Driver Ride Document
     const driverRide = await this.driverRideCollection.findById(
-      acceptedDriverRequest.driverRideId,
+      updatedRequest.driverRideId,
     );
     await this.driverRideCollection.findByIdAndUpdate(driverRide.id, {
       $set: {
@@ -158,6 +142,76 @@ export class DriverService {
             : DriverRideStatus.created,
       },
     });
+    return updatedRequest;
+  }
+
+  async riderDeclinesRequest(
+    driverRideRequestId: mongoose.Types.ObjectId | string,
+    riderRideRequestId: mongoose.Types.ObjectId | string,
+  ) {
+    return this.driverRideRequestsCollection.findByIdAndUpdate(
+      driverRideRequestId,
+      {
+        $set: {
+          status: DriverRideRequestsStatusEnums.DECLINED_BY_RIDER,
+          canAccept: false,
+          canDecline: false,
+          shouldGivePrice: false,
+          riderRideRequestId,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+  }
+
+  async riderNegotiatesPrice(
+    driverRideRequestId: mongoose.Types.ObjectId | string,
+    riderRideRequestId: mongoose.Types.ObjectId | string,
+    negotiatedPrice: number,
+  ) {
+    return this.driverRideRequestsCollection.findByIdAndUpdate(
+      driverRideRequestId,
+      {
+        $set: {
+          riderRideRequestId,
+          status: DriverRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
+          riderRequestingPrice: negotiatedPrice,
+          canAccept: true,
+          canDecline: true,
+          shouldGivePrice: false,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+  }
+
+  async riderAcceptedRequest(
+    driverRideRequestId: mongoose.Types.ObjectId | string,
+    riderRideRequestId: mongoose.Types.ObjectId | string,
+  ) {
+    // update driver request also driver ride
+    const driverRideRequest = await this.getRequestById(driverRideRequestId);
+
+    const acceptedPrice =
+      driverRideRequest.riderRequestingPrice ||
+      driverRideRequest.driverStartingPrice;
+
+    await this.acceptRequest(
+      driverRideRequestId,
+      acceptedPrice,
+      DriverRideRequestsStatusEnums.ACCEPTED_BY_RIDER,
+      riderRideRequestId,
+    );
+
+    // Invalid all the other driver requests
+    await this.invalidAllDriverRequestForRiderRideId(
+      driverRideRequestId,
+      driverRideRequest.riderRideId,
+    );
   }
 
   private async invalidAllDriverRequestForRiderRideId(

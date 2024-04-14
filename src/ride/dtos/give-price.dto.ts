@@ -5,5 +5,5 @@ export class GivePriceDto {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
-  driverStartingPrice: number;
+  price: number;
 }

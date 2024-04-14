@@ -24,13 +24,9 @@ import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 import { IsBlockedGuard } from '../common/guards/isBlocked.guard';
 import { IsSignedUpGuard } from '../common/guards/isSignedUp.guard';
 import { TokenBlacklistGuard } from '../common/guards/tokenBlacklist.guard';
-import { DriverService } from '../driver/driver.service';
-import { RiderService } from '../rider/rider.service';
-import { DriverRideDto } from './dtos/driver-ride.dto';
 import { Serialize } from '../common/interceptors/serialize.interceptor';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserDocument } from '../common/schemas/user.schema';
-import { RiderRideDto } from './dtos/rider-ride.dto';
 import { RideRequestsFilterDto } from './dtos/ride-requests.filter.dto';
 import { RideService } from './ride.service';
 import { RideRequestsDto } from './dtos/ride-requests.dto';
@@ -42,6 +38,12 @@ import { CanDriverAcceptRequestGuard } from '../common/guards/can-driver-accept-
 import { CanDriverGiveStartingPriceGuard } from '../common/guards/can-driver-give-starting-price.guard';
 import { CanRiderAcceptRequestGuard } from '../common/guards/can-rider-accept-request.guard';
 import { RiderRideRequestDto } from './dtos/rider-ride-request.dto';
+import { CanRiderDeclineRequestGuard } from '../common/guards/can-rider-decline-request.guard';
+import { CanRiderNegotiateRequestGuard } from '../common/guards/can-rider-negotiate-request.guard';
+import { RidesDto } from './dtos/rides.dto';
+import { RidesFiltersDto } from './dtos/rides-filters.dto';
+import { RiderRideRequestsStatusEnums } from '../common/schemas/rider-ride-requests.schema';
+import { DriverRideRequestsStatusEnums } from '../common/schemas/driver-ride-requests.schema';
 
 @ApiBearerAuth()
 @ApiTags('RIDES')
@@ -63,36 +65,27 @@ import { RiderRideRequestDto } from './dtos/rider-ride-request.dto';
   TokenBlacklistGuard,
 )
 export class RideController {
-  constructor(
-    private readonly driverService: DriverService,
-    private readonly riderService: RiderService,
-    private readonly rideService: RideService,
-  ) {}
-
-  @Get('/driver')
+  constructor(private readonly rideService: RideService) {}
   @ApiOperation({
-    summary: 'Get User Driver Rides',
+    summary: 'Get User Rides',
   })
   @ApiResponse({
-    description: 'Get Driver Rides',
-    type: [DriverRideDto],
+    description: 'Get User Ride Requests',
+    type: [RidesDto],
   })
-  @Serialize(DriverRideDto)
-  getUserDriverRides(@CurrentUser() user: UserDocument) {
-    return this.driverService.getRides(user);
-  }
-
-  @Get('/rider')
-  @ApiOperation({
-    summary: 'Get User Rider Rides',
+  @ApiQuery({
+    name: 'requestType',
+    required: false,
+    type: String,
+    enum: ['driver', 'rider'],
   })
-  @ApiResponse({
-    description: 'Get Rider Rides',
-    type: [RiderRideDto],
-  })
-  @Serialize(RiderRideDto)
-  getUserRiderRides(@CurrentUser() user: UserDocument) {
-    return this.riderService.getRides(user);
+  @Get('/rides')
+  @Serialize(RidesDto)
+  getRides(
+    @CurrentUser() user: UserDocument,
+    @Query() filters: RidesFiltersDto,
+  ) {
+    return this.rideService.getRides(user, filters);
   }
 
   @ApiOperation({
@@ -107,6 +100,15 @@ export class RideController {
     required: false,
     type: String,
     enum: ['driver', 'rider'],
+  })
+  @ApiQuery({
+    name: 'requestStatus',
+    required: false,
+    type: String,
+    enum: [
+      ...Object.values(RiderRideRequestsStatusEnums),
+      ...Object.values(DriverRideRequestsStatusEnums),
+    ],
   })
   @Get('/requests')
   @Serialize(RideRequestsDto)
@@ -137,10 +139,7 @@ export class RideController {
   @Patch('/driver/givePrice/:requestId')
   givePrice(@Param() params: RequestIdParamDto, @Body() body: GivePriceDto) {
     // Validation happens in CanDriverGiveStartingPriceGuard
-    return this.rideService.driverGivesPrice(
-      params.requestId,
-      body.driverStartingPrice,
-    );
+    return this.rideService.driverGivesPrice(params.requestId, body.price);
   }
 
   @ApiOperation({
@@ -219,5 +218,57 @@ export class RideController {
   ) {
     // Validation happens in CanRiderAcceptRequestGuard
     return this.rideService.riderAcceptRide(params.requestId, user);
+  }
+
+  // Rider can decline the ride
+  @ApiOperation({
+    summary:
+      'Rider Declines The Ride - Initially or after Driver Replies once rider negotiates',
+  })
+  @ApiResponse({
+    description: 'Ride Declined',
+    type: RiderRideRequestDto,
+  })
+  @ApiBadRequestResponse({
+    description: `Request not found`,
+  })
+  @ApiParam({
+    name: 'requestId',
+    description: 'Request id',
+    type: String,
+  })
+  @Serialize(RiderRideRequestDto)
+  @UseGuards(CanRiderDeclineRequestGuard)
+  @Patch('/rider/declineRequest/:requestId')
+  riderDeclinesRequest(@Param() params: RequestIdParamDto) {
+    // Validation happens in CanRiderDeclineRequestGuard
+    return this.rideService.riderDeclinesRequest(params.requestId);
+  }
+
+  // Rider can negotiate the ride
+  @ApiOperation({
+    summary: 'Rider Negotiates the Ride - Only Once allowed',
+  })
+  @ApiResponse({
+    description: 'Ride Negotiation Success',
+    type: RiderRideRequestDto,
+  })
+  @ApiBadRequestResponse({
+    description: `Request not found`,
+  })
+  @ApiParam({
+    name: 'requestId',
+    description: 'Request id',
+    type: String,
+  })
+  @Serialize(RiderRideRequestDto)
+  @UseGuards(CanRiderNegotiateRequestGuard)
+  @Patch('/rider/negotiate/:requestId')
+  riderNegotiatesRequest(
+    @Param() params: RequestIdParamDto,
+    @Body() body: GivePriceDto,
+  ) {
+    // Validation happens in CanRiderNegotiateRequestGuard
+    return this.rideService.riderNegotiatesPrice(params.requestId, body.price);
   }
 }

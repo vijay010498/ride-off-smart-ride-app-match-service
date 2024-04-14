@@ -10,6 +10,7 @@ import {
   RiderRideRequestsDocument,
   RiderRideRequestsStatusEnums,
 } from '../common/schemas/rider-ride-requests.schema';
+import { RideRequestsFilterDto } from '../ride/dtos/ride-requests.filter.dto';
 
 export type NewRiderRequest = {
   riderId: mongoose.Types.ObjectId | string;
@@ -50,16 +51,17 @@ export class RiderService {
       riderId,
     });
   }
-  async getRiderRequests(rider: UserDocument) {
-    return this.riderRideRequestsCollection
-      .find({
-        riderId: rider.id,
-      })
+  async getRiderRequests(rider: UserDocument, filters: RideRequestsFilterDto) {
+    let query = this.riderRideRequestsCollection
+      .find({ riderId: rider.id })
       .populate(['riderRideId', 'driverRideId'])
-      .sort({
-        createdAt: 'descending',
-      })
-      .exec();
+      .sort({ createdAt: 'descending' });
+
+    if (filters.requestStatus) {
+      query = query.where('status').equals(filters.requestStatus);
+    }
+
+    return query.exec();
   }
 
   async newRiderRequest({
@@ -90,7 +92,7 @@ export class RiderService {
           // Only pending requests
           $in: [
             RiderRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
-            RiderRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
+            RiderRideRequestsStatusEnums.WAITING_FOR_RIDER_RESPONSE,
           ],
         },
         riderId: rider._id,
@@ -114,8 +116,8 @@ export class RiderService {
     const acceptedPrice = request.negotiatedPrice
       ? request.negotiatedPrice
       : request.priceByDriver; // if negotiated by rider then driver accept the  rider, if not rider accept first go for the given price by driver
-    const updatedRideRequest = await this.riderRideRequestsCollection
-      .findByIdAndUpdate(
+    const updatedRideRequest =
+      await this.riderRideRequestsCollection.findByIdAndUpdate(
         requestId,
         {
           $set: {
@@ -129,8 +131,7 @@ export class RiderService {
         {
           new: true,
         },
-      )
-      .populate(['riderRideId', 'driverRideId']);
+      );
 
     // update rider ride
     await this.riderRideCollection.findByIdAndUpdate(
@@ -145,11 +146,94 @@ export class RiderService {
 
     // Invalid other pending requests
     await this.invalidAllPendingRequests(
-      requestId,
+      updatedRideRequest._id,
       rider,
       updatedRideRequest.riderRideId,
     );
 
     return updatedRideRequest;
+  }
+
+  async declinesRequest(requestId: string | mongoose.Types.ObjectId) {
+    return this.riderRideRequestsCollection.findByIdAndUpdate(
+      requestId,
+      {
+        $set: {
+          status: RiderRideRequestsStatusEnums.DECLINED_BY_RIDER,
+          canAccept: false,
+          canDecline: false,
+          canNegotiate: false,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+  }
+
+  async driverDeclinesRequest(requestId: string | mongoose.Types.ObjectId) {
+    return this.riderRideRequestsCollection.findByIdAndUpdate(
+      requestId,
+      {
+        $set: {
+          status: RiderRideRequestsStatusEnums.DECLINED_BY_DRIVER,
+          canAccept: false,
+          canDecline: false,
+          canNegotiate: false,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+  }
+
+  async driverAcceptRequest(
+    riderRideRequestId: string | mongoose.Types.ObjectId,
+    rider: UserDocument,
+  ) {
+    const updatedRideRequest =
+      await this.riderRideRequestsCollection.findByIdAndUpdate(
+        riderRideRequestId,
+        {
+          $set: {
+            status: RiderRideRequestsStatusEnums.ACCEPTED_BY_DRIVER,
+            canNegotiate: false,
+            canDecline: false,
+            canAccept: false,
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+    await this.invalidAllPendingRequests(
+      updatedRideRequest.id,
+      rider,
+      updatedRideRequest.riderRideId,
+    );
+    return updatedRideRequest;
+  }
+
+  async negotiate(
+    requestId: string | mongoose.Types.ObjectId,
+    negotiatedPrice: number,
+  ) {
+    return this.riderRideRequestsCollection.findByIdAndUpdate(
+      requestId,
+      {
+        $set: {
+          negotiatedPrice,
+          status: RiderRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
+          canNegotiate: false, // One time negotiation is done
+          canDecline: false,
+          canAccept: false,
+        },
+      },
+      {
+        new: true,
+      },
+    );
   }
 }

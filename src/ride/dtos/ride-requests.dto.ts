@@ -16,5 +16,5 @@ export class RideRequestsDto {
   @ApiProperty()
   @Type(() => RiderRideRequestDto)
   @Expose()
-  requestsAsRider: RiderRideRequestDto[]; // TODO change type
+  requestsAsRider: RiderRideRequestDto[];
 }
