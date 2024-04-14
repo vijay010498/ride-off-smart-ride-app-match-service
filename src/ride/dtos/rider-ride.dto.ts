@@ -11,6 +11,10 @@ export class RiderRideDto {
 
   @ApiProperty()
   @Expose()
+  confirmedRiderRequestID?: any;
+
+  @ApiProperty()
+  @Expose()
   userId: string;
 
   @ApiProperty()

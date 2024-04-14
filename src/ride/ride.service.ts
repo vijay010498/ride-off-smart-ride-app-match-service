@@ -96,4 +96,26 @@ export class RideService {
       throw new InternalServerErrorException();
     }
   }
+
+  async riderAcceptRide(
+    requestId: string | mongoose.Types.ObjectId,
+    rider: UserDocument,
+  ) {
+    try {
+      // Accept the rider ride request , invalid any other request for this riderId, update Rider Ride to booked as well
+      const updatedRiderRequest = await this.riderService.acceptRequest(
+        requestId,
+        rider,
+      );
+      // update driverRequest , make changes for rides as well
+      await this.driverService.riderAcceptedRide(
+        updatedRiderRequest.driverRideRequestId,
+      );
+
+      return updatedRiderRequest;
+    } catch (error) {
+      this.logger.log('riderAcceptRide-error', error);
+      throw new InternalServerErrorException();
+    }
+  }
 }

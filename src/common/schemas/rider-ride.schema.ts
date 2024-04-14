@@ -16,7 +16,6 @@ export enum RiderRideStatus {
   started = 'RIDE_STARTED',
   completed = 'RIDE_COMPLETED',
   inProgress = 'RIDE_IN_PROGRESS',
-  pendingResponse = 'RIDE_PENDING_RESPONSE',
   searching = 'RIDE_SEARCHING',
 }
 
@@ -29,6 +28,14 @@ export class RiderRide {
     type: mongoose.Types.ObjectId,
   })
   userId: mongoose.Types.ObjectId;
+
+  @Prop({
+    required: false,
+    index: true,
+    ref: 'RiderRideRequests',
+    type: mongoose.Types.ObjectId,
+  })
+  confirmedRiderRequestID: mongoose.Types.ObjectId;
 
   @Prop({
     type: { type: String, default: GeoJSONType.Point, enum: GeoJSONType }, // GeoJSON type

@@ -45,7 +45,7 @@ export class CanDriverGiveStartingPriceGuard implements CanActivate {
       return true;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      this.logger.error('Error in IsSignedUpGuard:', error);
+      this.logger.error('Error in CanDriverGiveStartingPriceGuard:', error);
       return false;
     }
   }

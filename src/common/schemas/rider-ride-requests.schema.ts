@@ -7,6 +7,7 @@ export enum RiderRideRequestsStatusEnums {
   ACCEPTED_BY_DRIVER = 'RIDER_RIDE_REQUEST_ACCEPTED_BY_DRIVER', // when rider negotiates for one time then driver acceptNEGOTIATED_BY_RIDER = 'RIDER_RIDE_REQUEST_NEGOTIATED_BY_RIDER', // when the rider negotiates the only time -  we create new Driver Ride
   DECLINED_BY_RIDER = 'RIDER_RIDE_REQUEST_DECLINED_BY_RIDER', // When the rider declines only first time if not negotiating
   DECLINED_BY_DRIVER = 'RIDER_RIDE_REQUEST_DECLINED_BY_DRIVER', // when the rider negotiates the price then driver declines it
+  OTHER_REQUEST_ACCEPTED = 'RIDER_RIDE_REQUEST_OTHER_REQUEST_ACCEPTED', // when the rider negotiates the price then driver declines it
 }
 @Schema({
   timestamps: true,

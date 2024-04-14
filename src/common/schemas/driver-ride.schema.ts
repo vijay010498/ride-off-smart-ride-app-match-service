@@ -34,7 +34,6 @@ export enum DriverRideStatus {
   started = 'RIDE_STARTED',
   completed = 'RIDE_COMPLETED',
   inProgress = 'RIDE_IN_PROGRESS',
-  pendingResponse = 'RIDE_PENDING_RESPONSE',
 }
 
 export enum LuggageEnum {

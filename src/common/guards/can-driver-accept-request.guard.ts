@@ -31,15 +31,13 @@ export class CanDriverAcceptRequestGuard implements CanActivate {
       }
 
       if (!driverRequest.canAccept || !driverRequest.riderRequestingPrice) {
-        throw new BadRequestException(
-          'Cannot Accept the ride, only when rider negotiates driver can accept',
-        );
+        throw new BadRequestException('Cannot Accept the ride');
       }
 
       return true;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      this.logger.error('Error in IsSignedUpGuard:', error);
+      this.logger.error('Error in CanDriverAcceptRequestGuard:', error);
       return false;
     }
   }

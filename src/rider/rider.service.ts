@@ -2,8 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { UserDocument } from '../common/schemas/user.schema';
 import mongoose, { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { RiderRideDocument } from '../common/schemas/rider-ride.schema';
-import { RiderRideRequestsDocument } from '../common/schemas/rider-ride-requests.schema';
+import {
+  RiderRideDocument,
+  RiderRideStatus,
+} from '../common/schemas/rider-ride.schema';
+import {
+  RiderRideRequestsDocument,
+  RiderRideRequestsStatusEnums,
+} from '../common/schemas/rider-ride-requests.schema';
 
 export type NewRiderRequest = {
   riderId: mongoose.Types.ObjectId | string;
@@ -37,11 +43,11 @@ export class RiderService {
 
   async getRequest(
     requestId: mongoose.Types.ObjectId | string,
-    riderRideRequestsCollection: mongoose.Types.ObjectId | string,
+    riderId: mongoose.Types.ObjectId | string,
   ) {
     return this.riderRideRequestsCollection.findOne({
       _id: requestId,
-      riderRideRequestsCollection,
+      riderId,
     });
   }
   async getRiderRequests(rider: UserDocument) {
@@ -70,5 +76,80 @@ export class RiderService {
       driverRideRequestId,
       priceByDriver,
     }).save();
+  }
+
+  private async invalidAllPendingRequests(
+    acceptedRequestId: mongoose.Types.ObjectId | string,
+    rider: UserDocument,
+    riderRideId: mongoose.Types.ObjectId | string,
+  ) {
+    return this.riderRideRequestsCollection.updateMany(
+      {
+        _id: { $ne: acceptedRequestId },
+        status: {
+          // Only pending requests
+          $in: [
+            RiderRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
+            RiderRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
+          ],
+        },
+        riderId: rider._id,
+        riderRideId,
+      },
+      {
+        $set: {
+          status: RiderRideRequestsStatusEnums.OTHER_REQUEST_ACCEPTED,
+          canAccept: false,
+          canDecline: false,
+          canNegotiate: false,
+        },
+      },
+    );
+  }
+  async acceptRequest(
+    requestId: mongoose.Types.ObjectId | string,
+    rider: UserDocument,
+  ) {
+    const request = await this.getRequest(requestId, rider.id);
+    const acceptedPrice = request.negotiatedPrice
+      ? request.negotiatedPrice
+      : request.priceByDriver; // if negotiated by rider then driver accept the  rider, if not rider accept first go for the given price by driver
+    const updatedRideRequest = await this.riderRideRequestsCollection
+      .findByIdAndUpdate(
+        requestId,
+        {
+          $set: {
+            status: RiderRideRequestsStatusEnums.ACCEPTED_BY_RIDER,
+            canAccept: false,
+            canDecline: false,
+            canNegotiate: false,
+            acceptedPrice,
+          },
+        },
+        {
+          new: true,
+        },
+      )
+      .populate(['riderRideId', 'driverRideId']);
+
+    // update rider ride
+    await this.riderRideCollection.findByIdAndUpdate(
+      updatedRideRequest.riderRideId,
+      {
+        $set: {
+          status: RiderRideStatus.booked,
+          confirmedRiderRequestID: updatedRideRequest.id,
+        },
+      },
+    );
+
+    // Invalid other pending requests
+    await this.invalidAllPendingRequests(
+      requestId,
+      rider,
+      updatedRideRequest.riderRideId,
+    );
+
+    return updatedRideRequest;
   }
 }

@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { UserDocument } from '../common/schemas/user.schema';
 import mongoose, { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { DriverRideDocument } from '../common/schemas/driver-ride.schema';
+import {
+  DriverRideDocument,
+  DriverRideStatus,
+} from '../common/schemas/driver-ride.schema';
 import {
   DriverRideRequestsDocument,
   DriverRideRequestsStatusEnums,
@@ -39,6 +42,11 @@ export class DriverService {
     });
   }
 
+  private async getRequestById(requestId: mongoose.Types.ObjectId | string) {
+    return this.driverRideRequestsCollection.findOne({
+      _id: requestId,
+    });
+  }
   async getDriverRequests(user: UserDocument) {
     return this.driverRideRequestsCollection
       .find({
@@ -95,13 +103,14 @@ export class DriverService {
   async acceptRequest(
     requestId: mongoose.Types.ObjectId | string,
     acceptedPrice: number,
+    status: DriverRideRequestsStatusEnums = DriverRideRequestsStatusEnums.ACCEPTED_BY_DRIVER,
   ) {
     return this.driverRideRequestsCollection
       .findByIdAndUpdate(
         requestId,
         {
           $set: {
-            status: DriverRideRequestsStatusEnums.ACCEPTED_BY_DRIVER,
+            status: status,
             canDecline: false,
             canAccept: false,
             acceptedPrice,
@@ -112,5 +121,66 @@ export class DriverService {
         },
       )
       .populate(['riderRideId', 'driverRideId', 'riderRideRequestId']);
+  }
+
+  async riderAcceptedRide(
+    driverRideRequestId: mongoose.Types.ObjectId | string,
+  ) {
+    // update driver request also driver ride
+    const driverRideRequest = await this.getRequestById(driverRideRequestId);
+
+    const acceptedPrice =
+      driverRideRequest.riderRequestingPrice ||
+      driverRideRequest.driverStartingPrice;
+
+    const acceptedDriverRequest = await this.acceptRequest(
+      driverRideRequestId,
+      acceptedPrice,
+      DriverRideRequestsStatusEnums.ACCEPTED_BY_RIDER,
+    );
+
+    // Invalid all the other driver requests
+    await this.invalidAllDriverRequestForRiderRideId(
+      acceptedDriverRequest.id,
+      driverRideRequest.riderRideId,
+    );
+
+    // Update Driver Ride Document
+    const driverRide = await this.driverRideCollection.findById(
+      acceptedDriverRequest.driverRideId,
+    );
+    await this.driverRideCollection.findByIdAndUpdate(driverRide.id, {
+      $set: {
+        availableSeats: driverRide.availableSeats - 1,
+        status:
+          driverRide.availableSeats - 1 <= 0
+            ? DriverRideStatus.full
+            : DriverRideStatus.created,
+      },
+    });
+  }
+
+  private async invalidAllDriverRequestForRiderRideId(
+    acceptedDriverRequestId: mongoose.Types.ObjectId | string,
+    riderRideId: mongoose.Types.ObjectId | string,
+  ) {
+    return this.driverRideRequestsCollection.updateMany(
+      {
+        _id: { $ne: acceptedDriverRequestId },
+        status: {
+          $in: [
+            DriverRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE,
+            DriverRideRequestsStatusEnums.WAITING_FOR_RIDER_RESPONSE,
+          ],
+        },
+        riderRideId,
+      },
+      {
+        status: DriverRideRequestsStatusEnums.OTHER_DRIVER_ACCEPTED,
+        canDecline: false,
+        canAccept: false,
+        shouldGivePrice: false,
+      },
+    );
   }
 }

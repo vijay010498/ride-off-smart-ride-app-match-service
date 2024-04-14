@@ -40,6 +40,8 @@ import { GivePriceDto } from './dtos/give-price.dto';
 import { CanDriverDeclineRequestGuard } from '../common/guards/can-driver-decline-request.guard';
 import { CanDriverAcceptRequestGuard } from '../common/guards/can-driver-accept-request.guard';
 import { CanDriverGiveStartingPriceGuard } from '../common/guards/can-driver-give-starting-price.guard';
+import { CanRiderAcceptRequestGuard } from '../common/guards/can-rider-accept-request.guard';
+import { RiderRideRequestDto } from './dtos/rider-ride-request.dto';
 
 @ApiBearerAuth()
 @ApiTags('RIDES')
@@ -158,7 +160,7 @@ export class RideController {
   })
   @Serialize(DriverRideRequestDto)
   @UseGuards(CanDriverDeclineRequestGuard)
-  @Patch('/driver/declineRide/:requestId')
+  @Patch('/driver/declineRequest/:requestId')
   driverDeclineRide(@Param() params: RequestIdParamDto) {
     // Validation happens in CanDriverDeclineRequestGuard
     return this.rideService.driverDeclineRide(params.requestId);
@@ -182,12 +184,40 @@ export class RideController {
   })
   @Serialize(DriverRideRequestDto)
   @UseGuards(CanDriverAcceptRequestGuard)
-  @Patch('/driver/acceptRide/:requestId')
+  @Patch('/driver/acceptRequest/:requestId')
   driverAcceptRide(
     @Param() params: RequestIdParamDto,
     @CurrentUser() user: UserDocument,
   ) {
     // Validation happens in CanDriverAcceptRequestGuard
     return this.rideService.driverAcceptRide(params.requestId, user);
+  }
+
+  // Rider can accept the ride
+  @ApiOperation({
+    summary:
+      'Rider Accepts The Ride - Initially or after Driver Replies once rider negotiates',
+  })
+  @ApiResponse({
+    description: 'Ride Accepted',
+    type: RiderRideRequestDto,
+  })
+  @ApiBadRequestResponse({
+    description: `Request not found`,
+  })
+  @ApiParam({
+    name: 'requestId',
+    description: 'Request id',
+    type: String,
+  })
+  @Serialize(RiderRideRequestDto)
+  @UseGuards(CanRiderAcceptRequestGuard)
+  @Patch('/rider/acceptRequest/:requestId')
+  riderAcceptRide(
+    @Param() params: RequestIdParamDto,
+    @CurrentUser() user: UserDocument,
+  ) {
+    // Validation happens in CanRiderAcceptRequestGuard
+    return this.rideService.riderAcceptRide(params.requestId, user);
   }
 }

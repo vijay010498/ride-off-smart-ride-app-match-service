@@ -5,13 +5,13 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { DriverService } from '../../driver/driver.service';
+import { RiderService } from '../../rider/rider.service';
 
 @Injectable()
-export class CanDriverDeclineRequestGuard implements CanActivate {
-  private readonly logger = new Logger(CanDriverDeclineRequestGuard.name);
+export class CanRiderDeclineRequestGuard implements CanActivate {
+  private readonly logger = new Logger(CanRiderDeclineRequestGuard.name);
 
-  constructor(private readonly driverService: DriverService) {}
+  constructor(private readonly riderService: RiderService) {}
   async canActivate(context: ExecutionContext) {
     try {
       const request = context.switchToHttp().getRequest();
@@ -21,23 +21,23 @@ export class CanDriverDeclineRequestGuard implements CanActivate {
 
       if (!userId || !requestId) return false;
 
-      const driverRequest = await this.driverService.getRequest(
+      const riderRequest = await this.riderService.getRequest(
         requestId,
         userId,
       );
 
-      if (!driverRequest) {
+      if (!riderRequest) {
         throw new BadRequestException('Request Not Found');
       }
 
-      if (!driverRequest.canDecline) {
-        throw new BadRequestException('Cannot decline the ride');
+      if (!riderRequest.canDecline) {
+        throw new BadRequestException('Cannot Decline Ride Now');
       }
 
       return true;
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      this.logger.error('Error in CanDriverDeclineRequestGuard:', error);
+      this.logger.error('Error in CanRiderDeclineRequestGuard:', error);
       return false;
     }
   }
