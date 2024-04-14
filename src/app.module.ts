@@ -10,6 +10,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SqsModule } from './sqs/sqs.module';
 import { SqsProcessorModule } from './sqs_processor/sqs_processor.module';
 import { MatchModule } from './match/match.module';
+import { RideModule } from './ride/ride.module';
+import { DriverModule } from './driver/driver.module';
+import { RiderModule } from './rider/rider.module';
+import { UserModule } from './user/user.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [
@@ -39,6 +44,11 @@ import { MatchModule } from './match/match.module';
     SqsModule,
     SqsProcessorModule,
     MatchModule,
+    RideModule,
+    DriverModule,
+    RiderModule,
+    UserModule,
+    TokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],

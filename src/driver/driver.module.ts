@@ -1,10 +1,10 @@
-import { forwardRef, Module } from '@nestjs/common';
-import { MatchService } from './match.service';
+import { Module } from '@nestjs/common';
+import { DriverService } from './driver.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DriverRideScheme } from '../common/schemas/driver-ride.schema';
-import { RiderRideScheme } from '../common/schemas/rider-ride.schema';
+import { UserVehicleSchema } from '../common/schemas/user-vehicle.schema';
+import { MyConfigModule } from '../my-config/my-config.module';
 import { DriverRideRequestsSchema } from '../common/schemas/driver-ride-requests.schema';
-import { SqsModule } from '../sqs/sqs.module';
 
 @Module({
   imports: [
@@ -14,17 +14,17 @@ import { SqsModule } from '../sqs/sqs.module';
         schema: DriverRideScheme,
       },
       {
-        name: 'RiderRide',
-        schema: RiderRideScheme,
+        name: 'UserVehicle',
+        schema: UserVehicleSchema,
       },
       {
         name: 'DriverRideRequests',
         schema: DriverRideRequestsSchema,
       },
     ]),
-    forwardRef(() => SqsModule),
+    MyConfigModule,
   ],
-  providers: [MatchService],
-  exports: [MatchService],
+  providers: [DriverService],
+  exports: [DriverService],
 })
-export class MatchModule {}
+export class DriverModule {}

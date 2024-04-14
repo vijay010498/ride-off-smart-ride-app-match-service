@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SqsProcessorService } from './sqs_processor.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserSchema } from '../common/schemas/user.schema';
@@ -32,7 +32,7 @@ import { MatchModule } from '../match/match.module';
         schema: RiderRideScheme,
       },
     ]),
-    MatchModule,
+    forwardRef(() => MatchModule),
   ],
   providers: [SqsProcessorService],
   exports: [SqsProcessorService],

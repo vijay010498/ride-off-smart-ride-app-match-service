@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { Document, Model, Types } from 'mongoose';
 import { UserDocument } from '../common/schemas/user.schema';
 import { UserTokenBlacklistDocument } from '../common/schemas/user-token-blacklist.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -7,7 +7,10 @@ import { Events } from '../common/enums/events.enums';
 import { Message } from '@aws-sdk/client-sqs';
 import { UserVehicleDocument } from '../common/schemas/user-vehicle.schema';
 import { DriverRideDocument } from '../common/schemas/driver-ride.schema';
-import { RiderRideDocument } from '../common/schemas/rider-ride.schema';
+import {
+  RiderRide,
+  RiderRideDocument,
+} from '../common/schemas/rider-ride.schema';
 import { MatchService } from '../match/match.service';
 
 @Injectable()
@@ -15,7 +18,10 @@ export class SqsProcessorService {
   private readonly logger = new Logger(SqsProcessorService.name);
 
   constructor(
-    @InjectModel('User') private readonly userCollection: Model<UserDocument>,
+    @Inject(forwardRef(() => MatchService))
+    private readonly matchService: MatchService,
+    @InjectModel('User')
+    private readonly userCollection: Model<UserDocument>,
     @InjectModel('UserTokenBlacklist')
     private readonly UserTokenBlacklistCollection: Model<UserTokenBlacklistDocument>,
     @InjectModel('UserVehicle')
@@ -24,7 +30,6 @@ export class SqsProcessorService {
     private readonly driverRideCollection: Model<DriverRideDocument>,
     @InjectModel('RiderRide')
     private readonly riderRideCollection: Model<RiderRideDocument>,
-    private readonly matchService: MatchService,
   ) {}
 
   async ProcessSqsMessage(messages: Message[]) {
@@ -39,6 +44,10 @@ export class SqsProcessorService {
               if (parsedMessage['EVENT_TYPE']) {
                 return this._handleMessageEventsSentBySNS(parsedMessage);
               }
+            } else {
+              // Message sent by Queue itself
+              if (parsedBody['EVENT_TYPE'])
+                return this._handleMessageEventsSentBySqs(parsedBody);
             }
           } catch (error) {
             this.logger.error('Error Parsing SQS message:', error);
@@ -99,6 +108,18 @@ export class SqsProcessorService {
     }
   }
 
+  private async _handleMessageEventsSentBySqs(parsedBody: any) {
+    const { EVENT_TYPE, riderRide } = parsedBody;
+    this.logger.log('_handleMessageEventsSentBySqs', EVENT_TYPE, riderRide);
+    switch (EVENT_TYPE) {
+      case Events.newRiderRideCreated:
+        return this._handleRiderRideCreated(riderRide, true);
+      default:
+        this.logger.warn(`Unhandled event type: ${EVENT_TYPE}`);
+        break;
+    }
+  }
+
   private async _handleDriverRideCreated(driverRide: DriverRideDocument) {
     try {
       const ride = new this.driverRideCollection({
@@ -111,12 +132,18 @@ export class SqsProcessorService {
     }
   }
 
-  private async _handleRiderRideCreated(riderRide: RiderRideDocument) {
+  private async _handleRiderRideCreated(
+    riderRide: RiderRideDocument,
+    isRetry = false,
+  ) {
     try {
-      const ride = new this.riderRideCollection({
-        ...riderRide,
-      });
-      await ride.save();
+      let ride: RiderRideDocument;
+      if (!isRetry) {
+        ride = new this.riderRideCollection({
+          ...riderRide,
+        });
+        await ride.save();
+      } else ride = await this.riderRideCollection.findById(riderRide._id);
 
       // Start Ride Matching Logic
       this.matchService.matchRiderRide(ride);

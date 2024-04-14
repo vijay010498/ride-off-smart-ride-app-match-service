@@ -17,6 +17,7 @@ export enum RiderRideStatus {
   completed = 'RIDE_COMPLETED',
   inProgress = 'RIDE_IN_PROGRESS',
   pendingResponse = 'RIDE_PENDING_RESPONSE',
+  searching = 'RIDE_SEARCHING',
 }
 
 @Schema({ timestamps: true, id: true })
