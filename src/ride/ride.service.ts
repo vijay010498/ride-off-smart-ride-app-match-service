@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { DriverService } from '../driver/driver.service';
 import { RiderService } from '../rider/rider.service';
 import { UserDocument } from '../common/schemas/user.schema';
@@ -46,5 +50,39 @@ export class RideService {
     // TODO should create new Rider Request
 
     return updatedDriverRideRequest;
+  }
+
+  async driverDeclineRide(requestId: string | mongoose.Types.ObjectId) {
+    try {
+      // Validation happens in CanDriverDeclineRequestGuard
+      // just change status and return the ride
+      // TODO add this driver Ride in excluded cache (with TTL) for this request (Rider Ride ID - so this does not match again for this ride)
+      return this.driverService.declineRequest(requestId);
+    } catch (error) {
+      this.logger.log('declineRide-error', error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async driverAcceptRide(
+    requestId: string | mongoose.Types.ObjectId,
+    user: UserDocument,
+  ) {
+    try {
+      // Validation happens in CanDriverAcceptRequestGuard
+
+      const driverRequest = await this.driverService.getRequest(
+        requestId,
+        user.id,
+      );
+
+      return this.driverService.acceptRequest(
+        requestId,
+        driverRequest.riderRequestingPrice, // Driver can accept only when user negotiates
+      );
+    } catch (error) {
+      this.logger.log('driverAcceptRide-error', error);
+      throw new InternalServerErrorException();
+    }
   }
 }

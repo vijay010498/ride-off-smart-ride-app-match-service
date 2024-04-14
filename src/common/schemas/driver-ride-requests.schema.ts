@@ -49,7 +49,14 @@ export class DriverRideRequests {
 
   @Prop({
     required: false,
-    default: false,
+    default: true, // initially driver can able to decline the ride
+    type: Boolean,
+  })
+  canDecline: boolean;
+
+  @Prop({
+    required: false,
+    default: false, // can accept only when rider negotiates
     type: Boolean,
   })
   canAccept: boolean;
@@ -64,6 +71,12 @@ export class DriverRideRequests {
     required: false,
     type: Number,
   })
+  riderRequestingPrice: number; // when rider negotiates
+
+  @Prop({
+    required: false,
+    type: Number,
+  })
   driverStartingPrice: number;
 
   @Prop({
@@ -71,16 +84,7 @@ export class DriverRideRequests {
     default: true,
     type: Boolean,
   })
-  canGivePrice: boolean;
-
-  @Prop({
-    required: false,
-    default: [],
-    index: true,
-    ref: 'DriverRideRequests',
-    type: [mongoose.Types.ObjectId],
-  })
-  previousRequestIds: [];
+  shouldGivePrice: boolean;
 }
 
 export type DriverRideRequestsDocument = DriverRideRequests & Document;

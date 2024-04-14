@@ -6,11 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DriverService } from '../../driver/driver.service';
-import { DriverRideRequestsStatusEnums } from '../schemas/driver-ride-requests.schema';
 
 @Injectable()
-export class CanDriverGiveStartingPriceGuard implements CanActivate {
-  private readonly logger = new Logger(CanDriverGiveStartingPriceGuard.name);
+export class CanDriverDeclineRequestGuard implements CanActivate {
+  private readonly logger = new Logger(CanDriverDeclineRequestGuard.name);
 
   constructor(private readonly driverService: DriverService) {}
   async canActivate(context: ExecutionContext) {
@@ -31,15 +30,8 @@ export class CanDriverGiveStartingPriceGuard implements CanActivate {
         throw new BadRequestException('Request Not Found');
       }
 
-      // to give starting price the status should be  // WAITING_FOR_DRIVER_RESPONSE
-      if (
-        driverRequest.status !==
-          DriverRideRequestsStatusEnums.WAITING_FOR_DRIVER_RESPONSE ||
-        !driverRequest.canGivePrice
-      ) {
-        throw new BadRequestException(
-          'Please Wait for Rider Response / cannot give price now',
-        );
+      if (!driverRequest.canDecline) {
+        throw new BadRequestException('Cannot decline the ride');
       }
 
       return true;

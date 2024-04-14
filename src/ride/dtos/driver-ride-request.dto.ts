@@ -27,7 +27,11 @@ export class DriverRideRequestDto {
 
   @ApiProperty()
   @Expose()
-  rideRequestDetails: string;
+  rideRequestDetails?: string;
+
+  @ApiProperty()
+  @Expose()
+  canDecline: boolean;
 
   @ApiProperty()
   @Expose()
@@ -35,17 +39,17 @@ export class DriverRideRequestDto {
 
   @ApiProperty()
   @Expose()
-  acceptedPrice: number;
+  acceptedPrice?: number;
 
   @ApiProperty()
   @Expose()
-  driverStartingPrice: number;
+  riderRequestingPrice?: number; // only when rider negotiates
 
   @ApiProperty()
   @Expose()
-  canGivePrice: boolean;
+  driverStartingPrice?: number;
 
   @ApiProperty()
   @Expose()
-  previousRequestIds: string[];
+  shouldGivePrice: boolean;
 }

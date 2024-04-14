@@ -62,8 +62,49 @@ export class DriverService {
           $set: {
             driverStartingPrice: startingPrice,
             status: DriverRideRequestsStatusEnums.WAITING_FOR_RIDER_RESPONSE,
-            canGivePrice: false,
-            canAccept: true,
+            shouldGivePrice: false,
+            canDecline: false, // Driver cannot decline once price is given
+          },
+        },
+        {
+          new: true,
+        },
+      )
+      .populate('riderRideId');
+  }
+
+  async declineRequest(requestId: mongoose.Types.ObjectId | string) {
+    return this.driverRideRequestsCollection
+      .findByIdAndUpdate(
+        requestId,
+        {
+          $set: {
+            status: DriverRideRequestsStatusEnums.DECLINED_BY_DRIVER,
+            canDecline: false,
+            canAccept: false,
+            shouldGivePrice: false,
+          },
+        },
+        {
+          new: true,
+        },
+      )
+      .populate('riderRideId');
+  }
+
+  async acceptRequest(
+    requestId: mongoose.Types.ObjectId | string,
+    acceptedPrice: number,
+  ) {
+    return this.driverRideRequestsCollection
+      .findByIdAndUpdate(
+        requestId,
+        {
+          $set: {
+            status: DriverRideRequestsStatusEnums.ACCEPTED_BY_DRIVER,
+            canDecline: false,
+            canAccept: false,
+            acceptedPrice,
           },
         },
         {

@@ -3,7 +3,7 @@ import {
   Controller,
   Get,
   Param,
-  Post,
+  Patch,
   Query,
   UseGuards,
   UseInterceptors,
@@ -37,7 +37,9 @@ import { RideRequestsDto } from './dtos/ride-requests.dto';
 import { DriverRideRequestDto } from './dtos/driver-ride-request.dto';
 import { RequestIdParamDto } from './dtos/request-Id-param.dto';
 import { GivePriceDto } from './dtos/give-price.dto';
-import { CanDriverGiveStartingPriceGuard } from '../common/guards/can-driver-give-starting-price-guard.service';
+import { CanDriverDeclineRequestGuard } from '../common/guards/can-driver-decline-request.guard';
+import { CanDriverAcceptRequestGuard } from '../common/guards/can-driver-accept-request.guard';
+import { CanDriverGiveStartingPriceGuard } from '../common/guards/can-driver-give-starting-price.guard';
 
 @ApiBearerAuth()
 @ApiTags('RIDES')
@@ -130,12 +132,62 @@ export class RideController {
   })
   @Serialize(DriverRideRequestDto)
   @UseGuards(CanDriverGiveStartingPriceGuard)
-  @Post('/driver/givePrice/:requestId')
+  @Patch('/driver/givePrice/:requestId')
   givePrice(@Param() params: RequestIdParamDto, @Body() body: GivePriceDto) {
     // Validation happens in CanDriverGiveStartingPriceGuard
     return this.rideService.driverGivesPrice(
       params.requestId,
       body.driverStartingPrice,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Driver Decline The Ride',
+  })
+  @ApiResponse({
+    description: 'Ride Declined',
+    type: DriverRideRequestDto,
+  })
+  @ApiBadRequestResponse({
+    description: `Request not found`,
+  })
+  @ApiParam({
+    name: 'requestId',
+    description: 'Request id',
+    type: String,
+  })
+  @Serialize(DriverRideRequestDto)
+  @UseGuards(CanDriverDeclineRequestGuard)
+  @Patch('/driver/declineRide/:requestId')
+  driverDeclineRide(@Param() params: RequestIdParamDto) {
+    // Validation happens in CanDriverDeclineRequestGuard
+    return this.rideService.driverDeclineRide(params.requestId);
+  }
+
+  @ApiOperation({
+    summary:
+      'Driver Accepts The Ride - Only available when the rider negotiates',
+  })
+  @ApiResponse({
+    description: 'Ride Accepted',
+    type: DriverRideRequestDto,
+  })
+  @ApiBadRequestResponse({
+    description: `Request not found`,
+  })
+  @ApiParam({
+    name: 'requestId',
+    description: 'Request id',
+    type: String,
+  })
+  @Serialize(DriverRideRequestDto)
+  @UseGuards(CanDriverAcceptRequestGuard)
+  @Patch('/driver/acceptRide/:requestId')
+  driverAcceptRide(
+    @Param() params: RequestIdParamDto,
+    @CurrentUser() user: UserDocument,
+  ) {
+    // Validation happens in CanDriverAcceptRequestGuard
+    return this.rideService.driverAcceptRide(params.requestId, user);
   }
 }
