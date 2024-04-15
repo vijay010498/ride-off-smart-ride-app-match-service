@@ -15,6 +15,7 @@ import { DriverModule } from './driver/driver.module';
 import { RiderModule } from './rider/rider.module';
 import { UserModule } from './user/user.module';
 import { TokenModule } from './token/token.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { TokenModule } from './token/token.module';
     RiderModule,
     UserModule,
     TokenModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
