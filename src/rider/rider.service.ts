@@ -192,6 +192,7 @@ export class RiderService {
     riderRideRequestId: string | mongoose.Types.ObjectId,
     rider: UserDocument,
   ) {
+    // TODO rider original reqeust should alos change status
     const updatedRideRequest =
       await this.riderRideRequestsCollection.findByIdAndUpdate(
         riderRideRequestId,
@@ -207,6 +208,19 @@ export class RiderService {
           new: true,
         },
       );
+
+    await this.riderRideCollection.findByIdAndUpdate(
+      updatedRideRequest.riderRideId,
+      {
+        $set: {
+          status: RiderRideStatus.booked,
+          confirmedRiderRequestID: updatedRideRequest.id,
+        },
+      },
+      {
+        new: true,
+      },
+    );
 
     await this.invalidAllPendingRequests(
       updatedRideRequest.id,
